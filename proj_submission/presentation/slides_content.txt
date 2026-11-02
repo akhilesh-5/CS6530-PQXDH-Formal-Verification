@@ -1,0 +1,91 @@
+================================================================================
+SLIDE 0: TITLE SLIDE (Minimal, Does not count toward 4 content slides)
+================================================================================
+Title: Post-Quantum Secure Messaging: Formal Analysis, Failure Reproduction, and Hardened Protocol Design in Signal PQXDH
+Subtitle: Course Project Theme 2 — Post-Quantum Secure Messaging
+Course: CS6530 Applied Cryptography (Jul–Nov 2026) | IIT Madras
+Instructor: Prof. Manikantan
+
+Team Members (Equal 3-Person Split):
+• Akhilesh K.R (CS26E001) — Activities 1 & 2 (Theoretical Foundations & Failure Analysis) + Act 4 Exp 2 (KDF Binding)
+• Mysha Ali (CS26E008) — Activity 3 (Bounded Formal Reproduction in ProVerif: Rev 1 vs Rev 2)
+• D R Santhosh (CS26E004) — Activity 4 Exploration 1 (Key-Type Confusion Exploration in ProVerif)
+(Activities 5 & 6 Collaborative Synthesis)
+
+================================================================================
+SLIDE 1: Problem Statement, Threat Model & Failure Mechanisms (Activities 1 & 2)
+Speaker: Akhilesh K.R (CS26E001) [Time: 2.5 mins]
+================================================================================
+[The Harvest-Now-Decrypt-Later (HNDL) Threat]
+• Classical Messaging (Signal X3DH): Relies entirely on Curve25519 Diffie–Hellman prekeys.
+• Vulnerability: An active/passive adversary records encrypted transcripts today and decrypts them retroactively using Shor's algorithm on a future Cryptographically Relevant Quantum Computer (CRQC).
+• Signal PQXDH Hybrid Architecture: Augments classical 4-way DH (DH1..DH4) with ML-KEM-1024 (Kyber).
+
+[The Primitive Substitution Fallacy & Failure Analysis]
+• Fallacy: Dropping an IND-CCA2 KEM into a DH handshake does NOT guarantee authenticated key exchange.
+• Failure Mode 1 (KEM Re-encapsulation): IND-CCA2 security ensures ciphertext secrecy under a fixed public key, but fails to guarantee public-key binding. An attacker with a compromised key PQPK_2 can re-encapsulate Alice's shared secret (SS) under Bob's honest key PQPK_1, breaking session independence.
+• Failure Mode 2 (Key-Type Confusion): If public keys are untyped byte sequences (encodeEC = encodeKEM), an attacker substitutes an EC Signed Prekey for a KEM prekey, forcing encapsulation against an EC point and yielding a predictable secret (weakECasKEM), silently stripping quantum security.
+
+================================================================================
+SLIDE 2: Activity 3 — Bounded Formal Reproduction in ProVerif (Baseline vs. Fix)
+Speaker: Mysha Ali (CS26E008) [Time: 2.5 mins]
+================================================================================
+[Automated Formal Modeling in ProVerif 2.05 (Applied Pi-Calculus)]
+• Symbolic Dolev-Yao Attacker: Full control over network messages, interleaving sessions, and re-encapsulation.
+• Injective Agreement Query: Bob accepting a session with Alice implies Alice initiated that exact session with the identical prekeys (IK, OPK, SPK, PQPK).
+
+[Model 01: Baseline PQXDH Revision 1 (01_pqxdh_rev1_reencaps_vulnerable.pv)]
+• Mechanism: Associated Data omits PQPK: AD = concat2(encodeEC(IK_A), encodeEC(IK_B)).
+• ProVerif Automated Result: RESULT inj-event(RespondDone(...)) ==> inj-event(InitDone(...)) is FALSE.
+• Attack Trace Extraction: ProVerif reconstructs the re-encapsulation attack in 23.77s. Alice negotiates under compromised PQPK_2; attacker decapsulates SS and re-encapsulates under Bob's honest PQPK_1; Bob accepts session under PQPK_1 with an attacker-known key.
+
+[Model 02: Hardened PQXDH Revision 2 (02_pqxdh_rev2_hardened.pv)]
+• Fix: Associated Data explicitly binds the KEM public key: AD = concat3(encodeEC(IK_A), encodeEC(IK_B), PQPK_B).
+• ProVerif Automated Result: RESULT inj-event(RespondDone(...)) ==> inj-event(InitDone(...)) is TRUE.
+• Verification: ProVerif mathematically proves that if the attacker re-encapsulates under PQPK_1, Bob's AEAD decryption fails due to AD mismatch, fully restoring injective agreement.
+
+================================================================================
+SLIDE 3: Activity 4 — Novel Cryptographic Explorations in ProVerif
+Speakers: D R Santhosh (CS26E004) [Exp 1] & Akhilesh K.R (CS26E001) [Exp 2] [Time: 2.5 mins]
+================================================================================
+[Exploration 1: Algorithm/Key-Type Confusion (03_activity4_confuse_kem_ec.pv) — D R Santhosh]
+• Research Question: What occurs if an implementation omits prefix domain separation between EC and KEM keys?
+• Formal Model: We unified encodings (asKEM(encodeEC(x)) = kem_pk_from_ec(x)) forcing encapsulation to return (encaps_weak(x), weakECasKEM).
+• ProVerif Query: event(InitDone(...)) && attacker(weakECasKEM).
+• Automated Result: RESULT cannot be proved (attack trace found in 15.90s).
+• Finding: Without rigid domain-separated byte prefixes, an adversary can substitute prekeys on the wire, tricking the client into calculating an attacker-predictable KEM secret and degrading security to classical X3DH.
+
+[Exploration 2: Direct KDF Transcript Binding Proposal P2 (04_activity4_pqxdh_kdf_bound.pv) — Akhilesh K.R]
+• Architectural Limitation of Revision 2: Fixing an asymmetric key-binding flaw at the symmetric AEAD layer violates clean protocol modularity.
+• Proposal P2 Design: Maintain purely classical AEAD AD (IK_A || IK_B), but feed Bob's KEM public key directly into the root HKDF extraction: SK = HKDF(KMAC256(DH1 || DH2 || DH3 || DH4 || SS || PQPK_B)).
+• ProVerif Automated Result: RESULT inj-event(RespondDone(...)) ==> inj-event(InitDone(...)) is TRUE (proved in 20.21s).
+• Impact: Proves that binding PQPK directly into KDF eliminates re-encapsulation at the key-derivation boundary, independent of whether the payload is AEAD-encrypted.
+[Exploration 1: Algorithm/Key-Type Confusion (03_activity4_confuse_kem_ec.pv)]
+• Research Question: What occurs if an implementation omits prefix domain separation between EC and KEM keys?
+• Formal Model: We unified encodings (asKEM(encodeEC(x)) = kem_pk_from_ec(x)) forcing encapsulation to return (encaps_weak(x), weakECasKEM).
+• ProVerif Query: event(InitDone(...)) && attacker(weakECasKEM).
+• Automated Result: RESULT cannot be proved (attack trace found in 15.90s).
+• Finding: Without rigid domain-separated byte prefixes, an adversary can substitute prekeys on the wire, tricking the client into calculating an attacker-predictable KEM secret and degrading security to classical X3DH.
+
+[Exploration 2: Direct KDF Transcript Binding Proposal P2 (04_activity4_pqxdh_kdf_bound.pv)]
+• Architectural Limitation of Revision 2: Fixing an asymmetric key-binding flaw at the symmetric AEAD layer violates clean protocol modularity.
+• Proposal P2 Design: Maintain purely classical AEAD AD (IK_A || IK_B), but feed Bob's KEM public key directly into the root HKDF extraction: SK = HKDF(KMAC256(DH1 || DH2 || DH3 || DH4 || SS || PQPK_B)).
+• ProVerif Automated Result: RESULT inj-event(RespondDone(...)) ==> inj-event(InitDone(...)) is TRUE (proved in 20.21s).
+• Impact: Proves that binding PQPK directly into KDF eliminates re-encapsulation at the key-derivation boundary, independent of whether the payload is AEAD-encrypted.
+
+================================================================================
+SLIDE 4: Activities 5 & 6 — Security Evolution Matrix & Engineering Lessons
+Speaker: Collaborative / Shared (Akhilesh / Santhosh / Mysha) [Time: 2.5 mins]
+================================================================================
+[Security Evolution Matrix Across Literature [R1]–[R4]]
+• Key Agreement Evolution: Signal [R1] retrofits X3DH with hybrid KEM; [R2] focuses on subversion-resilient KEMs; [R3] designs clean-slate PQ ratchets; [R4] implements authenticated standalone sessions.
+• Binding Architecture: Unbound KEMs fail (Activity 3); mitigation requires AD binding ([R1] Rev 2), Direct KDF binding ([R1] Proposal P2), or cumulative signed transcripts ([R4]).
+• Implementation Invariants: Signal Rev 1 was safe only because Kyber's FO transform happened to hash H(pk) into SS. Specifications must never rely on accidental primitive implementation quirks!
+
+[Five Core Engineering Lessons for Post-Quantum Migration]
+1. The Primitive Substitution Fallacy: KEMs provide confidentiality, not authentication; dropping a KEM into a DH handshake without identity binding introduces active vulnerabilities.
+2. Mandatory Transcript Binding: Handshake nonces, public keys, and ciphertexts must be cryptographically hashed into key derivation contexts.
+3. Bandwidth & MTU Constraints: Large lattice keys (~1.5 KB) and signatures (~2.4 KB) cause packet fragmentation; store-and-forward protocols must budget for message bloat.
+4. Formal Verification Gate: Symbolic automated modeling in ProVerif catches compositional flaws that functional unit tests completely miss.
+5. Specification Independence: Protocol specifications must explicitly mandate all required mathematical invariants and not rely on underlying library artifacts.
+================================================================================

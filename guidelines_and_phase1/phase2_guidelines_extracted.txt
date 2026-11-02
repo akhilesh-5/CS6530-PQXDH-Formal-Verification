@@ -1,0 +1,201 @@
+--- PAGE 1 ---
+P a g e | 1/4 
+CS6530 Course Project Phase 2 Completion and Final 
+Assessment 
+Applied Cryptography  |  July-November 2026 
+Dear Students, 
+Greetings. 
+The course project now moves to final submission and assessment. This notice gives the complete requirements for 
+the remaining project work, presentation, written viva, deadlines and allocation of the remaining 16 marks. Please 
+use the coming week to close the project carefully and ensure that every team member understands the complete 
+work. 
+Important dates 
+Item 
+Date and time 
+Final project deliverables 
+Monday, 2 November 2026, 11:59 PM IST 
+Project presentations 
+Tuesday, 3 November to Friday, 6 November 2026 
+Presentation slides 
+10:00 PM IST on the day before the assigned presentation 
+Individual written viva 
+Friday, 6 November 2026, after the final team presentation 
+ 
+Submission deadline. All three final project artefacts must be uploaded to Moodle by Monday, 2 November 2026, 
+11:59 PM IST. Submissions will not be accepted after this deadline. 
+Final project deliverables 
+Submit the following three artefacts. The report, technical artefacts, video and presentation must describe the same 
+completed work. 
+Artefact 1  Completed technical report 
+The report must consolidate the understanding, analysis, experiments, evidence and engineering conclusions 
+obtained from the project. It should clearly capture the outcomes of Activities 3 to 6 specified for the assigned 
+project theme, while retaining the necessary context from Activities 1 and 2. 
+• Problem statement, primary-paper understanding and security objective 
+• Relevant system, protocol or security model and the threat or design analysis 
+• Analysis of the security failure and relevant supporting literature 
+• Configuration and experimental environment 
+• Reproduction, experiment or technical-study procedure 
+• Baseline result and supporting evidence 
+• Modified exploration and the resulting behaviour 
+• Selected logs, screenshots or outputs that support the findings 
+• Security Evolution Matrix 
+• Four or five engineering lessons 
+• Limitations, difficulties and deviations from the paper or prescribed experiment 
+• Brief statement of each member's contribution 
+• Brief declaration of generative-AI usage 
+Evidence must be selective and relevant. Do not include raw or excessive logs merely for completeness. 
+Artefact 2  Code scripts models and configuration 
+Submit the student-developed code, scripts, formal models, configuration files and relevant modifications used for 
+the technical study, as applicable to the project. Clearly distinguish: 
+
+--- PAGE 2 ---
+P a g e | 2/4 
+• author-provided or instructor-provided resources 
+• student modifications to those resources 
+• student-created code, scripts, models or configuration 
+Include a concise README containing prerequisites, setup and execution steps, expected outputs and the location of 
+the important evidence. 
+Artefact 3  Short demonstration video 
+Submit a concise 5 to 8 minute video demonstrating the important technical work. The video should show the 
+environment or context, baseline study or reproduction, observed result, modification or exploration, and resulting 
+behaviour. The video provides evidence of work performed; it is not a second full project presentation. 
+Presentation schedule selection 
+The presentation schedule will be selected transparently in class using two bowls: 
+1. Bowl 1 will contain ten team slips: Team 1 to Team 10. 
+2. Bowl 2 will contain ten presentation-slot slips: Tue-1 to Tue-3, Wed-1 to Wed-3, Thu-1 to Thu-3 and Fri-1. 
+3. A volunteer will draw one team slip and one slot slip to form a pair. 
+4. Nine pairs will be drawn. The final unmatched team and slot will form the tenth pair automatically. 
+5. The complete team-to-slot mapping will be displayed and shared after the draw. 
+Presentation format 
+Time 
+Activity 
+0-10 minutes 
+Team presentation; a two-minute warning is given at 10 minutes 
+10-12 minutes 
+Team completes the presentation 
+12-14 minutes 
+Instructor and audience clarification questions 
+14-15 minutes 
+Close and transition to the next team 
+ 
+Time limit. The presentation will stop at 12 minutes even if some material remains. Clarification will close at 14 
+minutes. 
+Slide requirements 
+• A maximum of four content slides is permitted. A minimal title slide may be added and does not count toward the 
+four content slides. 
+• The four content slides must collectively capture the six activities specified for the project theme. 
+• The slides must be consistent with the submitted report, technical artefacts and demonstration video. 
+• Use selected evidence and results. Do not overload the slides with text, logs or screenshots. 
+• Any video excerpt shown during the presentation counts within the 12-minute presentation time. 
+Slide submission 
+Upload the slides to the course Moodle page by 10:00 PM IST on the day before the team's assigned presentation. 
+The submitted version will be copied to the classroom system and treated as the official presentation version. A 
+replacement may be accepted only to correct a genuine factual, rendering or technical error, with prior instructor 
+approval. 
+Speaking order and participation 
+For a three-member team, three slips numbered 1, 2 and 3 will be used. Each member will randomly pick one slip, 
+and the team will present in that order. Every member must present at least one content slide and must be prepared 
+to explain the complete project. The team may plan how the fourth content slide is shared or assigned. Two-member 
+teams must ensure that both members present; a single-member team will present the complete work. 
+The questions after the presentation are for clarification. They are not the individual project viva. 
+
+--- PAGE 3 ---
+P a g e | 3/4 
+Individual written viva 
+A 30-minute individual written viva will be conducted on Friday, 6 November 2026, after the final team presentation. 
+Every student will answer questions about the student's own project. The assessment will cover: 
+• Project security objective and threat model 
+• Cryptographic or key-flow explanation 
+• One negative test and what its result demonstrated 
+• One failed assumption, limitation or implementation difficulty 
+• A project-specific question requiring the student to defend a design decision or proposed improvement 
+Questions 1 to 4 will have a common structure but must be answered using the student's own project. Question 5 will 
+have team-coded variants. The written viva assesses individual understanding; marks may therefore differ among 
+members of the same team. 
+Allocation of the remaining 16 project marks 
+Component 
+Marks 
+Assessment focus 
+Completed technical report 
+5 
+Technical depth and correctness; completion of Activities 3-6; analysis, results 
+and evidence; engineering conclusions, limitations and clarity 
+Code scripts models 
+configuration and evidence 
+3 
+Completeness, correctness, reproducibility, README quality, organization and 
+clear distinction between supplied and student-created work 
+Demonstration video 
+2 
+Technical evidence of the completed work, baseline and modified exploration, 
+observed results and clarity 
+Team presentation 
+2 
+Selection of key findings, consistency with the report and evidence, clarity, timing 
+and participation 
+Individual written viva 
+4 
+Individual understanding of the security objective, threat model, cryptographic 
+flow, negative testing, limitations and design decisions 
+Total remaining project marks 
+16 
+Phase 1 has already been assessed separately for 4 marks 
+ 
+Detailed assessment guidance 
+Component 
+Internal allocation 
+Completed technical report  5 marks 
+Technical completion and correctness: 2.0; security analysis and engineering synthesis: 
+1.25; experiments, results and evidence: 1.25; clarity, references, contribution 
+statement and AI declaration: 0.5 
+Technical artefacts  3 marks 
+Correct and relevant artefacts: 1.25; reproducibility and README: 0.75; evidence and 
+traceability to reported results: 0.5; organization and provenance of supplied, modified 
+and created material: 0.5 
+Demonstration video  2 marks 
+Technical evidence and observed behaviour: 1.25; selection, organization and clarity: 
+0.75 
+Team presentation  2 marks 
+Selection and explanation of key findings: 1.0; clarity, timing and member participation: 
+1.0 
+Written viva  4 marks 
+Questions 1-4: 0.75 each; project-specific Question 5: 1.0 
+ 
+Contingency arrangements 
+The scheduled assessment mode will be used whenever possible. If an officially recognized disruption or documented 
+illness prevents that mode, an equivalent alternative will be used without increasing the project scope. Students will 
+not lose marks solely because an assessment could not be conducted for reasons outside their control. 
+
+--- PAGE 4 ---
+P a g e | 4/4 
+Severe weather or institute-wide disruption 
+• A cancelled presentation will be rescheduled within the remaining presentation periods wherever feasible. 
+• If rescheduling is not feasible, the submitted four-slide deck and demonstration video will be used, together with a 
+short narrated explanation in which every available team member participates. A second full technical 
+demonstration will not be required. 
+• The individual written viva will be conducted in the earliest feasible common physical or timed online slot. If 
+neither is possible before marks must be finalized, an equivalent individual project-specific written assessment 
+will be announced. 
+• The submission deadline will remain unchanged when Moodle and normal connectivity remain available. If an 
+officially announced disruption materially affects access, one common revised deadline will be announced for all 
+affected teams. 
+Illness affecting a student or team 
+• The student or team must inform the instructor at the earliest feasible time and provide the documentation 
+required under institute policy. 
+• If one member is ill, the team should normally submit and present as scheduled. The absent member's 
+presentation contribution may be assessed from the submitted evidence or through a brief makeup interaction, 
+and a written-viva makeup will be arranged where feasible. 
+• If the entire team is affected, the instructor will determine an appropriate short extension, rescheduled 
+presentation or equivalent assessment using the submitted work. 
+• The contingency provisions apply only to officially recognized disruption, documented illness or another reason 
+accepted under institute policy. Unexplained absence may result in loss of the corresponding assessment marks. 
+Final submission checklist 
+[ ] The completed report addresses all required project activities and includes selective evidence. 
+[ ] Code, scripts, models and configuration are organized and accompanied by a usable README. 
+[ ] Supplied resources, student modifications and student-created work are clearly distinguished. 
+[ ] The demonstration video is 5 to 8 minutes and shows the important technical evidence. 
+[ ] The contribution statement and generative-AI usage declaration are included. 
+[ ] All three artefacts are uploaded before the final deadline. 
+[ ] Every team member is prepared to present and answer the written viva independently. 
+ 
+Best wishes for completing the project carefully and presenting the most important evidence clearly. 
