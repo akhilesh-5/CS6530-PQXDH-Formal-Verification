@@ -100,6 +100,12 @@ chmod +x run_all.sh
 ./run_all.sh
 ```
 
+### Standalone Run for Exploration 1 (Key-Type Confusion):
+```cmd
+cd activity3_4
+.\bin\proverif.exe models\03_activity4_confuse_kem_ec.pv
+```
+
 ### Verification Output Summary:
 ```
 ========================================================================================================
@@ -114,7 +120,40 @@ Id  Suite                                    Model                              
 
 ---
 
-## 4. Final Submission Checklist for Moodle
+## 4. Technical Analysis: Activity 4 Novel Cryptographic Explorations
+
+### 4.1 Exploration 1: Algorithm & Key-Type Confusion (`03_activity4_confuse_kem_ec.pv`)
+* **Lead Contributor:** D R Santhosh (`CS26E004`)
+* **Objective:** Evaluate protocol behavior and formal authentication/secrecy guarantees when public keys lack cryptographic domain separation tags or explicit wire-format type prefixes.
+* **Symbolic Modeling in ProVerif:**
+  We unify elliptic curve and KEM public key encodings to model cross-primitive coercion:
+  ```proverif
+  fun encodeEC(point): bitstring.
+  fun encodeKEM(kempub): bitstring.
+  fun ECasKEM(point): kempub [typeConverter].
+
+  (* Equational theory for cross-primitive encoding collision *)
+  equation forall x: scalar; encodeKEM(ECasKEM(SMUL(x, G))) = encodeEC(SMUL(x, G)).
+
+  (* Equational reduction: a KEM based on an EC point produces a predictable/recoverable secret *)
+  reduc forall x: scalar, k: bitstring; weakECasKEM(penc(ECasKEM(SMUL(x, G)), k)) = k.
+  ```
+* **Attack Trace Synthesis:**
+  Under the Dolev-Yao attacker model, the adversary intercepts Bob's prekey bundle and substitutes Bob's Signed Prekey (`SPKB`) in place of Bob's post-quantum prekey (`PQPKB`). Because `encodeKEM(ECasKEM(SPKB)) = encodeEC(SPKB)`, the XEdDSA signature verifies successfully. Alice then encapsulates against the EC point, allowing the attacker to recover the secret `weakECasKEM` and derive the initiator's session key.
+  ```text
+  RESULT event(InitDone(a,b,useOPK_2,opk,spk,pqpk,ts))@i_1 && attacker(ts) ==> ... cannot be proved.
+  A trace has been found.
+  ```
+* **Security Insight:** Relying on implicit key sizing or higher-level transport boundaries is insufficient. Robust post-quantum protocols must enforce strict byte-level domain separation prefixes (e.g., `0x01` for Curve25519, `0x02` for ML-KEM-1024) across all signed public key payloads.
+
+### 4.2 Exploration 2: Direct KDF Transcript Binding Proposal P2 (`04_activity4_pqxdh_kdf_bound.pv`)
+* **Lead Contributor:** Akhilesh K.R (`CS26E001`)
+* **Objective:** Formally prove Signal Revision 3 Proposal P2, which binds the KEM public key directly into the root HKDF extraction ($SK = \text{HKDF}(..., SS, PQPK_B)$) while keeping the AEAD Associated Data purely classical ($\text{AD} = IK_A \parallel IK_B$).
+* **Verification Outcome:** ProVerif proves injective agreement holds (`is true`), demonstrating that transcript binding at the key derivation layer provides layer independence and eliminates re-encapsulation vulnerabilities without modifying symmetric AEAD headers.
+
+---
+
+## 5. Final Submission Checklist for Moodle
 Before Monday, 2 November 2026, 11:59 PM IST, upload the 3 required artefacts:
 1. **Artefact 1 (Technical Report PDF):** Convert `report/CS6530_Project_CS26E001_CS26E004_CS26E008_Report.md` to PDF named `CS6530_Project_CS26E001_CS26E004_CS26E008_Report.pdf`.
 2. **Artefact 2 (Code & Models ZIP):** Compress the `proj_submission` folder (containing `formal_verification/`, `report/`, `presentation/`, `README.md`) into `CS6530_Project_CS26E001_CS26E004_CS26E008_Code.zip`.

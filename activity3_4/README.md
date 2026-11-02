@@ -46,13 +46,13 @@ activity3_4/
 
 #### Option A: Windows PowerShell Runner (Recommended)
 ```powershell
-cd D:\IITM\Applied_Crypto\Project\activity3_4\scripts
+cd activity3_4\scripts
 .\run_all.ps1
 ```
 
 #### Option B: Windows CMD Batch Runner
 ```cmd
-cd D:\IITM\Applied_Crypto\Project\activity3_4\scripts
+cd activity3_4\scripts
 run_all.bat
 ```
 
@@ -61,6 +61,13 @@ run_all.bat
 cd activity3_4/scripts
 chmod +x run_all.sh
 ./run_all.sh
+```
+
+#### Option D: Standalone Execution for Activity 4 Exploration 1
+To run only the Key-Type Confusion exploration model:
+```cmd
+cd activity3_4
+.\bin\proverif.exe models\03_activity4_confuse_kem_ec.pv
 ```
 
 ---
@@ -76,8 +83,50 @@ chmod +x run_all.sh
 
 ---
 
-## 4. Equal 3-Member Contribution Split
+## 4. Deep Dive: Activity 4 Exploration 1 (Key-Type Confusion)
 
-* **Akhilesh K.R (`CS26E001`):** PQXDH protocol architecture, prekey bundle analysis, Dolev-Yao attacker capabilities, and trust/compromise model.
-* **D R Santhosh (`CS26E004`):** Formal modeling in ProVerif, Activity 3 Bounded Reproduction of PQXDH Rev 1 vulnerability (`01`) vs. Rev 2 correction (`02`), and attack trace analysis.
-* **Mysha Ali (`CS26E008`):** Activity 4 Controlled Engineering Explorations: key-type domain confusion (`03`), direct KDF transcript binding (`04`), and formal security interpretation.
+* **Lead Contributor:** D R Santhosh (`CS26E004`)
+* **File:** `models/03_activity4_confuse_kem_ec.pv`
+* **Log:** `outputs/03_activity4_confuse_kem_ec_output.txt`
+
+### Threat Model & Formulation
+In hybrid handshakes combining classical elliptic curve cryptography with post-quantum lattice-based KEMs, public keys are transmitted over untrusted channels. If public keys lack cryptographic domain separation tags or explicit type prefixes, an attacker can coerce one public key type into another.
+
+In `03_activity4_confuse_kem_ec.pv`, we model the absence of wire-format type tags:
+```proverif
+fun encodeEC(point): bitstring.
+fun encodeKEM(kempub): bitstring.
+fun ECasKEM(point): kempub [typeConverter].
+
+(* Equation modeling cross-primitive encoding collision *)
+equation forall x: scalar; encodeKEM(ECasKEM(SMUL(x, G))) = encodeEC(SMUL(x, G)).
+
+(* Equation modeling weakness: an EC point coerced as a KEM key yields a recoverable secret *)
+reduc forall x: scalar, k: bitstring; weakECasKEM(penc(ECasKEM(SMUL(x, G)), k)) = k.
+```
+
+### Attack Trace Analysis
+1. The active Dolev-Yao attacker intercepts Bob's prekey bundle from the server.
+2. The attacker delivers Bob's classical Signed Prekey `SPKB` in place of the post-quantum prekey `PQPKB`.
+3. Because `encodeKEM(ECasKEM(SPKB)) = encodeEC(SPKB)`, the XEdDSA signature check succeeds:
+   `verify(IKB_p, encodeKEM(PQPKB_p), PQPKB_sig) = true`
+4. Alice performs post-quantum encapsulation against Bob's EC key:
+   `(CT, SS) = pqkem_enc(ECasKEM(SPKB))`
+5. The attacker recovers the shared secret via `weakECasKEM(CT) = SS`, effectively stripping the post-quantum protection layer and degrading the hybrid session to classical Diffie–Hellman.
+6. ProVerif verifies this failure mode:
+   ```text
+   RESULT event(InitDone(a,b,useOPK_2,opk,spk,pqpk,ts))@i_1 && attacker(ts) ==> ... cannot be proved.
+   A trace has been found.
+   ```
+
+### Engineering Mitigation
+To prevent cross-primitive type confusion, protocol implementations must prepend unforgeable 1-byte algorithm/domain identifiers (e.g., `0x01` for Curve25519, `0x02` for ML-KEM-1024) to all public keys before signing and hashing.
+
+---
+
+## 5. Equal 3-Member Contribution Split
+
+* **Akhilesh K.R (`CS26E001`):** Activities 1 & 2 (Theoretical Foundations & Security Failure Modes) + Activity 4 Exploration 2 (Direct KDF Transcript Binding - Proposal P2: `04_activity4_pqxdh_kdf_bound.pv`).
+* **Mysha Ali (`CS26E008`):** Activity 3 (Bounded Formal Reproduction in ProVerif: Baseline Rev 1 Vulnerability `01` vs. Rev 2 Hardened Fix `02`).
+* **D R Santhosh (`CS26E004`):** Activity 4 Exploration 1 (Key-Type Confusion Exploration in ProVerif: `03_activity4_confuse_kem_ec.pv`, Automated Trace Extraction, and Type-Tagging Domain Separation Analysis).
+*(Activities 5 & 6 Collaborative Synthesis across All Members)*
