@@ -40,16 +40,9 @@ letfun pqkem_enc(pk:kempub) =
        (penc(pk,ss),ss).
 letfun pqkem_dec(sk:kempriv,ct:bitstring) =
        pdec(sk,ct).
-(* Encodings for signing *)
-(* Here, we produce a variant where the signature of a an eliptic curve value can be confused with the signature of a KEM pkey. *)
-(* Encoding with key type confusions *)
-fun encodeEC(point):bitstring.
-fun encodeKEM(kempub):bitstring.
-fun ECasKEM(point):kempub [typeConverter].
-(* equation for the confusion *)
-equation forall x:scalar; encodeKEM(ECasKEM(SMUL(x,G))) = encodeEC(SMUL(x,G)).
-(* equation modeling the fact that a kem based on an EC public key is insecure *)
-reduc forall x:scalar,k:bitstring; weakECasKEM(penc(ECasKEM(SMUL(x,G)),k)) = k.
+(* the domains are disjoints, see [PQXDH] *)
+fun encodeEC(point):bitstring [data].
+fun encodeKEM(kempub):bitstring [data].
 (* Bitstring manipulations *)
 (* Constants *)
 const zero: bitstring.
@@ -63,7 +56,7 @@ const ff_x448:bitstring.
 (* The concatenation of string representations of the 4 PQXDH parameters info, curve, hash, and pqkem into a single string separated with ‘_’ such as “MyProtocol_CURVE25519_SHA-512_CRYSTALS-KYBER-1024”. *)
 const info_x25519_sha512_kyber1024:bitstring.
 (* Unambiguous concatenation, assumes that length of first element is known *)
-fun concatIK(point,point): bitstring [data].
+fun concatIKKEM(point,point,kempub): bitstring [data].
 fun concat(bitstring,bitstring): bitstring [data].
 fun concat5(point,point,point,point,bitstring):bitstring [data].
 fun concat4(point,point,point,bitstring):bitstring [data].
@@ -122,23 +115,22 @@ event CompromisePQPK(client,kempub).
 (*-----------------------------------*)
 (* Security Model and Properties *)
 (*-----------------------------------*)
-(* Specific queries for attack traces *)
-query a,b:client, useOPK:bool, opk,spk:point, pqpk:kempub, ts:symkey, i,j:time;
-      event(InitDone(a,b,useOPK,opk,spk,pqpk,ts))@i && attacker(ts) ==>
-      (* A compromise of IKB in the past is enough to break everything. *)
-      (event(CompromiseIK(b))@j && (j < i
-            ||
-     (
-      event(CompromiseSPK(b,spk))
-      &&
-      (event(CompromisePQPK(b,pqpk)) || event(BrokenKEM))
-      ))
-      )
+query a,b:client, useOPK:bool, opk,opk2,spk:point, pqpk:kempub, ts:symkey, i,j:time;
+      event(RespondDone(b,a,useOPK,opk,spk,pqpk,ts))@i ==>
+      (* authentication including over the opk *)
+       (useOPK = true && event(InitDone(a,b,true, opk,spk,pqpk,ts)))
        ||
-       (event(BrokenDH())@j && (j < i
-               || event(CompromisePQPK(b,pqpk))
-        || event(BrokenKEM)
-               ))
+      (* authentication not over the opk *)
+       (useOPK = false && event(InitDone(a,b,false, opk2,spk,pqpk,ts)))
+       (* Unless *)
+       ||
+       (* The compromise of IKA allows the attacker to play the role of A, and thus know the key *)
+       (event(CompromiseIK(a))@j && j < i)
+       ||
+       (* Knowing a SPK completely allows to break auth *)
+       (event(CompromiseSPK(b,spk))@j && j < i )
+       ||
+       (event(BrokenDH())@j && j < i)
 .
  nounif z:scalar; attacker(SMUL(z,G)) / 30000.
 (* DH breaks down *)
@@ -201,7 +193,7 @@ let Initiator(i:client, IKA_s:scalar) =
      in
  event InitDone(i,r,useOPK,OPKB_p,SPKB_p,PQPKB_p,SK);
  (* Removing from the ad the PQPKB_p reintroduces the re-encapsulation attack *)
-        let ad = concatIK(IKA_p,IKB_p) in
+        let ad = concatIKKEM(IKA_p,IKB_p,PQPKB_p) in
         new msg_nonce: bitstring;
         let msg = app_message(i,r,msg_nonce) in
         let enc_msg = aead_enc(SK,empty_nonce,msg,ad) in
@@ -238,7 +230,7 @@ let Responder_mess(r:client, IKB_s:scalar, SPKB_s:scalar,PQSPKB_s:kempriv)=
         else kdf(concat4(DH1,DH2,DH3,SS)))
        in
  (* Removing from the ad the PQPKB_p reintroduces the re-encapsulation attack *)
-       let ad = concatIK(IKA_p,IKB_p) in
+       let ad = concatIKKEM(IKA_p,IKB_p,PQSPKB_p) in
        let msg = aead_dec(SK,empty_nonce,enc_msg,ad) in
        event RespondDone(r,i,useOPK,OPKB_p,SPKB_p,PQSPKB_p,SK)
       )
@@ -288,6 +280,16 @@ process
 (* EXPECTED RESULTS *)
 (*************************************)
 (*
+$ make
+--------------------------------------------------------------
+Verification summary:
+Query event(InitDone(a,b,useOPK_1,opk,spk,pqpk,ts))@i_2 && attacker(ts) ==> (event(CompromiseIK(b))@j && (i_2 > j || (event(CompromiseSPK(b,spk)) && (event(CompromisePQPK(b,pqpk)) || event(BrokenKEM))))) || (event(BrokenDH)@j && (i_2 > j || event(CompromisePQPK(b,pqpk)) || event(BrokenKEM))) is true.
+Query event(RespondDone(b,a,useOPK_1,opk,spk,pqpk,ts))@i_2 && attacker(ts) ==> (event(CompromiseIK(a))@j1 && i_2 > j1) || (event(CompromiseSPK(b,spk))@j1 && (i_2 > j1 || (event(CompromiseIK(b))@j2 && (i_2 > j2 || event(CompromisePQPK(b,pqpk)) || event(BrokenKEM)) && (useOPK_1 = false || event(CompromiseOPK(b,opk)))))) || (event(BrokenDH)@j1 && (i_2 > j1 || event(CompromisePQPK(b,pqpk)) || event(BrokenKEM))) is true.
+Query event(RespondDone(b,a,useOPK_1,opk,spk,pqpk,ts))@i_2 ==> (useOPK_1 = true && event(InitDone(a,b,true,opk,spk,pqpk,ts))) || (useOPK_1 = false && event(InitDone(a,b,false,opk2,spk,pqpk,ts))) || (event(CompromiseIK(a))@j && i_2 > j) || (event(CompromiseSPK(b,spk))@j && i_2 > j) || (event(BrokenDH)@j && i_2 > j) is true.
+--------------------------------------------------------------
+real 1m43,094s
+*)
+(*
 $ make reach
 --------------------------------------------------------------
 Verification summary:
@@ -297,37 +299,4 @@ Query not event(RespondDone(r_1,i_2,true,opk,spk,pqpk,ts)) is false.
 Query not event(RespondDone(r_1,i_2,false,opk,spk,pqpk,ts)) is false.
 --------------------------------------------------------------
 real 0m0,9
-*)
-(*
---------------------------------------------------------------
-Verification summary:
-Query(ies):
- - Query event(InitDone(a,b,useOPK_2,opk,spk,pqpk,ts))@i_1 && attacker(ts) ==> (event(CompromiseIK(b))@j && (i_1 > j || (event(CompromiseSPK(b,spk)) && (event(CompromisePQPK(b,pqpk)) || event(BrokenKEM))))) || (event(BrokenDH)@j && (i_1 > j || event(CompromisePQPK(b,pqpk)) || event(BrokenKEM))) is true.
- - Query event(RespondDone(b,a,useOPK_2,opk,spk,pqpk,ts))@i_1 && attacker(ts) ==> (event(CompromiseIK(a))@j1 && i_1 > j1) || (event(CompromiseSPK(b,spk))@j1 && (i_1 > j1 || (event(CompromiseIK(b))@j2 && (i_1 > j2 || event(CompromisePQPK(b,pqpk)) || event(BrokenKEM) || (event(CompromisePQPK(b,pqpk2))@j3 && i_1 > j3)) && (useOPK_2 = false || event(CompromiseOPK(b,opk)))))) || (event(BrokenDH)@j1 && (i_1 > j1 || event(CompromisePQPK(b,pqpk)) || event(BrokenKEM) || (event(CompromisePQPK(b,pqpk2))@j2 && i_1 > j2) || (event(CompromiseIK(b))@j2 && i_1 > j2))) is true.
- - Query event(RespondDone(b,a,useOPK_2,opk,spk,pqpk,ts))@i_1 ==> (useOPK_2 = true && event(InitDone(a,b,true,opk,spk,pqpk,ts))) || (useOPK_2 = false && event(InitDone(a,b,false,opk2,spk,pqpk,ts))) || (event(CompromiseIK(a))@j && i_1 > j) || (event(CompromisePQPK(b,pqpk2))@j && i_1 > j) || (event(BrokenKEM)@j && i_1 > j) || (event(CompromiseIK(b))@j && i_1 > j) || (event(CompromiseSPK(b,spk))@j && i_1 > j) || (event(BrokenDH)@j && i_1 > j) is true.
-Associated restriction(s):
- - Restriction event(isBool(b)) ==> b = true || b = false encoded as event(isBool(b)) ==> b = true || b = false in process 1.
---------------------------------------------------------------
-real 3m25,305s
-*)
-(*
---------------------------------------------------------------
-Verification summary:
-Query(ies):
- - Query event(InitDone(a,b,useOPK_2,opk,spk,pqpk,ts))@i_1 && attacker(ts) ==> (event(CompromiseIK(b))@j && (i_1 > j || (event(CompromiseSPK(b,spk)) && (event(CompromisePQPK(b,pqpk)) || event(BrokenKEM))))) || (event(BrokenDH)@j && (i_1 > j || event(CompromisePQPK(b,pqpk)) || event(BrokenKEM))) cannot be proved.
-Associated restriction(s):
- - Restriction event(isBool(b)) ==> b = true || b = false encoded as event(isBool(b)) ==> b = true || b = false in process 1.
---------------------------------------------------------------
-real 0m11,823s
-Remark: cannot be proved, but only because the trace obtained by ProVerif does the CompromiseIK unecessarily early.
-*)
-(*
---------------------------------------------------------------
-Verification summary:
-Query(ies):
- - Query event(RespondDone(b,a,useOPK_2,opk,spk,pqpk,ts))@i_1 ==> (useOPK_2 = true && event(InitDone(a,b,true,opk,spk,pqpk,ts))) || (useOPK_2 = false && event(InitDone(a,b,false,opk2,spk,pqpk,ts))) || (event(CompromiseIK(a))@j && i_1 > j) || (event(CompromiseSPK(b,spk))@j && i_1 > j) || (event(BrokenDH)@j && i_1 > j) is false.
-Associated restriction(s):
- - Restriction event(isBool(b)) ==> b = true || b = false encoded as event(isBool(b)) ==> b = true || b = false in process 1.
---------------------------------------------------------------
-real 0m16,570s
 *)

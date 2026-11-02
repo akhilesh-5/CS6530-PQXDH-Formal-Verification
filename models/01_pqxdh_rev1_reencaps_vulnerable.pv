@@ -60,8 +60,6 @@ const info_x25519_sha512_kyber1024:bitstring.
 fun concatIK(point,point): bitstring [data].
 fun concat(bitstring,bitstring): bitstring [data].
 fun concat5(point,point,point,point,bitstring):bitstring [data].
-fun concat5_kdf(point,point,point,point,bitstring,kempub):bitstring [data].
-fun concat4_kdf(point,point,point,bitstring,kempub):bitstring [data].
 fun concat4(point,point,point,bitstring):bitstring [data].
 (* HKDF *)
 (* One-shot HKDF(input_key_material, salt, info) *)
@@ -199,8 +197,8 @@ let Initiator(i:client, IKA_s:scalar) =
      let DH2 = dh(EKA_s,IKB_p) in
      let DH3 = dh(EKA_s,SPKB_p) in
      let SK =
-        (if useOPK then (let DH4 = dh(EKA_s,OPKB_p) in kdf(concat5_kdf(DH1,DH2,DH3,DH4,SS,PQPKB_p)))
-        else kdf(concat4_kdf(DH1,DH2,DH3,SS,PQPKB_p)))
+        (if useOPK then (let DH4 = dh(EKA_s,OPKB_p) in kdf(concat5(DH1,DH2,DH3,DH4,SS)))
+        else kdf(concat4(DH1,DH2,DH3,SS)))
      in
  event InitDone(i,r,useOPK,OPKB_p,SPKB_p,PQPKB_p,SK);
  (* Removing from the ad the PQPKB_p reintroduces the re-encapsulation attack *)
@@ -237,8 +235,8 @@ let Responder_mess(r:client, IKB_s:scalar, SPKB_s:scalar,PQSPKB_s:kempriv)=
        let DH2 = dh(IKB_s, EKA_p) in
        let DH3 = dh(SPKB_s,EKA_p) in
        let SK =
-        (if useOPK then (let DH4 = dh(OPKB_s,EKA_p) in kdf(concat5_kdf(DH1,DH2,DH3,DH4,SS,PQSPKB_p)))
-        else kdf(concat4_kdf(DH1,DH2,DH3,SS,PQSPKB_p)))
+        (if useOPK then (let DH4 = dh(OPKB_s,EKA_p) in kdf(concat5(DH1,DH2,DH3,DH4,SS)))
+        else kdf(concat4(DH1,DH2,DH3,SS)))
        in
  (* Removing from the ad the PQPKB_p reintroduces the re-encapsulation attack *)
        let ad = concatIK(IKA_p,IKB_p) in
@@ -334,4 +332,3 @@ Associated restriction(s):
 --------------------------------------------------------------
 real 0m16,570s
 *)
-
